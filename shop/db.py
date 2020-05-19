@@ -1,0 +1,68 @@
+import enum
+import uuid
+
+from aiopg.sa import create_engine
+from sqlalchemy import (Column, DECIMAL, Enum, ForeignKey, Integer, MetaData, String, Table, Text)
+from sqlalchemy.dialects.postgresql import UUID
+
+meta = MetaData()
+
+
+class Gender(enum.Enum):
+    male = 'Мужской'
+    female = 'Женский'
+
+
+user = Table(
+    'users', meta,
+
+    Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
+    Column('first_name', String(255), nullable=False),
+    Column('surname', String(255), nullable=False),
+    Column('middle_name', String(255), nullable=True),
+    Column('sex', Enum(Gender)),
+    Column('age', Integer, nullable=False)
+)
+
+user_order = Table(
+    'users_orders', meta,
+
+    Column('user_id', UUID(as_uuid=True), ForeignKey('users.id')),
+    Column('order_id', UUID(as_uuid=True), ForeignKey('orders.id')),
+)
+
+order = Table(
+    'orders', meta,
+
+    Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
+    Column('number', Integer, nullable=False)
+)
+
+order_product = Table(
+    'orders_products', meta,
+
+    Column('product_id', UUID(as_uuid=True), ForeignKey('products.id')),
+    Column('order_id', UUID(as_uuid=True), ForeignKey('orders.id')),
+    Column('quantity', Integer, nullable=False)
+)
+
+product = Table(
+    'products', meta,
+
+    Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
+    Column('name', String(255), nullable=False),
+    Column('description', Text, nullable=False),
+    Column('price', DECIMAL, nullable=False),
+    Column('left_in_stock', Integer, nullable=False)
+)
+
+
+async def init_pg(app):
+    config = app['config']['postgres']
+    engine = await create_engine(**config)
+    app['db'] = engine
+
+
+async def close_pg(app):
+    app['db'].close()
+    await app['db'].wait_closed()

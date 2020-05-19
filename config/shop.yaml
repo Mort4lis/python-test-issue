@@ -1,0 +1,6 @@
+postgres:
+  database: shop_test
+  user: shop_user
+  password: shop_password
+  host: 127.0.0.1
+  port: 5432
