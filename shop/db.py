@@ -13,10 +13,12 @@ class Gender(enum.Enum):
     female = 'Женский'
 
 
-user = Table(
+user_table = Table(
     'users', meta,
 
     Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
+    Column('login', String(255), unique=True, nullable=False),
+    Column('password', String(255), nullable=False),
     Column('first_name', String(255), nullable=False),
     Column('surname', String(255), nullable=False),
     Column('middle_name', String(255), nullable=True),
@@ -24,21 +26,29 @@ user = Table(
     Column('age', Integer, nullable=False)
 )
 
-user_order = Table(
+token_table = Table(
+    'tokens', meta,
+
+    Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
+    Column('token', String(64), unique=True, nullable=False),
+    Column('user_id', UUID(as_uuid=True), ForeignKey('users.id'))
+)
+
+user_order_table = Table(
     'users_orders', meta,
 
     Column('user_id', UUID(as_uuid=True), ForeignKey('users.id')),
     Column('order_id', UUID(as_uuid=True), ForeignKey('orders.id')),
 )
 
-order = Table(
+order_table = Table(
     'orders', meta,
 
     Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
     Column('number', Integer, nullable=False)
 )
 
-order_product = Table(
+order_product_table = Table(
     'orders_products', meta,
 
     Column('product_id', UUID(as_uuid=True), ForeignKey('products.id')),
@@ -46,7 +56,7 @@ order_product = Table(
     Column('quantity', Integer, nullable=False)
 )
 
-product = Table(
+product_table = Table(
     'products', meta,
 
     Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
