@@ -1,8 +1,8 @@
 from aiohttp import web
 
+from shop.db import close_pg, init_pg
 from shop.routes import setup_routes
 from shop.settings import config
-from shop.db import init_pg, close_pg
 
 app = web.Application()
 app['config'] = config
