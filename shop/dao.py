@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 
 from .db import token_table, user_table
+from .exceptions import TokenNotFoundException, UserNotFoundException
 from .storage import AccessToken, User
 
 
@@ -98,6 +99,9 @@ class SqlAlchemyUserDAO(UserDAO):
         result = await self.conn.execute(query)
         row = await result.fetchone()
 
+        if row is None:
+            raise UserNotFoundException
+
         return User(**row)
 
     async def get_by_token(self, token: str) -> User:
@@ -105,6 +109,9 @@ class SqlAlchemyUserDAO(UserDAO):
         query = user_table.select().select_from(join).where(token_table.c.token == token)
         result = await self.conn.execute(query)
         row = await result.fetchone()
+
+        if row is None:
+            raise UserNotFoundException
 
         return User(**row)
 
@@ -131,5 +138,8 @@ class SqlAlchemyTokenDAO(AccessTokenDAO):
         query = token_table.select().select_from(join).where(user_table.c.login == login)
         result = await self.conn.execute(query)
         row = await result.fetchone()
+
+        if row is None:
+            raise TokenNotFoundException
 
         return AccessToken(**row)

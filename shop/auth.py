@@ -1,6 +1,7 @@
 from passlib.hash import sha256_crypt
 
 from .dao import AccessTokenDAO, UserDAO
+from .exceptions import DAOException
 
 
 async def check_credentials(user_dao: UserDAO, login: str, password: str) -> bool:
@@ -11,10 +12,11 @@ async def check_credentials(user_dao: UserDAO, login: str, password: str) -> boo
     :param login: логин пользователя
     :param password: пароль пользователя
     """
-    user = await user_dao.get_by_login(login=login)
-    if user is not None:
-        return sha256_crypt.verify(password, user.password)
-    return False
+    try:
+        user = await user_dao.get_by_login(login=login)
+    except DAOException:
+        return False
+    return sha256_crypt.verify(password, user.password)
 
 
 async def get_access_token(token_dao: AccessTokenDAO, login: str) -> str:

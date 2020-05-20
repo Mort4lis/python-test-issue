@@ -4,6 +4,7 @@ from aiohttp import web
 from aiohttp_tokenauth import token_auth_middleware
 
 from shop.db import close_pg, init_pg
+from shop.exceptions import DAOException
 from shop.middlewares import dao_middleware
 from shop.routes import setup_routes
 from shop.settings import config
@@ -21,7 +22,10 @@ async def init():
         :param token: Токен из HTTP заголовка "Authorization"
         """
         user_dao = app['dao']['user']
-        user = await user_dao.get_by_token(token)
+        try:
+            user = await user_dao.get_by_token(token)
+        except DAOException:
+            user = None
         return user
 
     app = web.Application(middlewares=[
