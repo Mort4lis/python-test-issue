@@ -62,6 +62,15 @@ class UserDAO(ABC):
         """
         pass
 
+    @abstractmethod
+    async def get_by_token(self, token: str) -> User:
+        """
+        Получить пользователя по токену доступа.
+
+        :param token: токен доступа
+        """
+        pass
+
 
 class SqlAlchemyUserDAO(UserDAO):
     """Реализация абстрактного слоя доступа к БД (DAO) для сущности Пользователь (User)."""
@@ -86,6 +95,14 @@ class SqlAlchemyUserDAO(UserDAO):
 
     async def get_by_login(self, login: str) -> User:
         query = user_table.select().where(user_table.c.login == login)
+        result = await self.conn.execute(query)
+        row = await result.fetchone()
+
+        return User(**row)
+
+    async def get_by_token(self, token: str) -> User:
+        join = sa.join(user_table, token_table, user_table.c.id == token_table.c.user_id)
+        query = user_table.select().select_from(join).where(token_table.c.token == token)
         result = await self.conn.execute(query)
         row = await result.fetchone()
 
