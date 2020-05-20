@@ -21,10 +21,10 @@ class LoginView(View):
 
         Возвращает ответ с телом токена в случае успешной аутентификации.
         """
-        db_engine = self.request.app['db']
+        dao_instances = self.request.app['dao']
         credentials = await self.request.json()
-        if await check_credentials(db_engine=db_engine, **credentials):
-            token = await get_access_token(db_engine=db_engine, login=credentials['login'])
+        if await check_credentials(user_dao=dao_instances['user'], **credentials):
+            token = await get_access_token(token_dao=dao_instances['token'], login=credentials['login'])
             return json_response(status=200, data={'token': token})
 
         return json_response(status=400, data={'error': 'Bad credentials'})

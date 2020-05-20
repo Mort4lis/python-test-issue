@@ -111,11 +111,11 @@ class SqlAlchemyUserDAO(UserDAO):
 
 class AccessTokenDAO(ABC):
     @abstractmethod
-    async def get_by_login(self, user_id: UUID) -> AccessToken:
+    async def get_by_login(self, login: str) -> AccessToken:
         """
-        Получить токен по идентификатору пользователя.
+        Получить токен по логину пользователя.
 
-        :param user_id: идентификатор пользователя
+        :param login: логин пользователя
         """
         pass
 

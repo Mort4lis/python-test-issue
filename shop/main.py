@@ -3,11 +3,11 @@ from typing import Optional
 from aiohttp import web
 from aiohttp_tokenauth import token_auth_middleware
 
-from shop.dao import SqlAlchemyUserDAO
 from shop.db import close_pg, init_pg
+from shop.middlewares import dao_middleware
 from shop.routes import setup_routes
 from shop.settings import config
-from .storage import User
+from shop.storage import User
 
 
 async def init():
@@ -20,13 +20,12 @@ async def init():
 
         :param token: Токен из HTTP заголовка "Authorization"
         """
-        async with app['db'].acquire() as conn:
-            user_dao = SqlAlchemyUserDAO(conn)
-            user = await user_dao.get_by_token(token)
-
+        user_dao = app['dao']['user']
+        user = await user_dao.get_by_token(token)
         return user
 
     app = web.Application(middlewares=[
+        dao_middleware,
         token_auth_middleware(
             user_loader=user_loader,
             exclude_routes=('/login',)
