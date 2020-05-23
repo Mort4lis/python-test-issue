@@ -5,6 +5,7 @@ from aiohttp_validate import validate
 
 from .auth import check_credentials, get_access_token
 from .services import ProductService
+from .storage import Product
 from .utils import JsonEncoder
 
 
@@ -42,8 +43,22 @@ class ProductListCreateView(View):
         body = json.dumps([product.__dict__ for product in products], cls=JsonEncoder)
         return Response(status=200, text=body, content_type='application/json')
 
-    async def post(self):
-        return json_response(data={'message': 'POST!'})
+    @validate(request_schema={
+        'type': 'object',
+        'properties': {
+            'name': {'type': 'string', 'minLength': 1, 'maxLength': 255},
+            'description': {'type': 'string', 'minLength': 5},
+            'price': {'type': 'number', 'minimum': 0.1},
+            'left_in_stock': {'type': 'integer', 'minimum': 1}
+        },
+        'required': ['name', 'description', 'price', 'left_in_stock']
+    })
+    async def post(self, *args):
+        data = await self.request.json()
+        service = ProductService(dao=self.request.app['dao']['product'])
+        created = await service.create(product=Product(id=None, **data))
+        body = json.dumps(created.__dict__, cls=JsonEncoder)
+        return Response(status=200, text=body, content_type='application/json')
 
 
 async def index(request):

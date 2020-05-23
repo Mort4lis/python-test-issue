@@ -1,5 +1,6 @@
 from enum import Enum
 from uuid import UUID
+from typing import Optional
 
 
 class User:
@@ -61,7 +62,7 @@ class Product:
     """Класс продуктов."""
 
     def __init__(self,
-                 id: UUID,
+                 id: Optional[UUID],
                  name: str,
                  description: str,
                  price: float,
@@ -80,3 +81,9 @@ class Product:
         self.description = description
         self.price = price
         self.left_in_stock = left_in_stock
+
+    def __iter__(self):
+        for key, value in self.__dict__.items():
+            if key == 'id' and value is None:
+                continue
+            yield key, value

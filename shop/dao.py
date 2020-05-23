@@ -147,6 +147,10 @@ class SqlAlchemyTokenDAO(AccessTokenDAO):
 
 class ProductDAO(ABC):
     @abstractmethod
+    async def create(self, product: Product) -> Product:
+        pass
+
+    @abstractmethod
     async def get_all(self) -> Iterable[Product]:
         pass
 
@@ -154,6 +158,14 @@ class ProductDAO(ABC):
 class SqlAlchemyProductDAO(ProductDAO):
     def __init__(self, conn: SAConnection):
         self.conn = conn
+
+    async def create(self, product: Product) -> Product:
+        insert = product_table.insert(). \
+            values(**dict(product)). \
+            returning(product_table.c.id)
+        result = await self.conn.execute(insert)
+        inserted_primary_key = await result.scalar()
+        return Product(id=inserted_primary_key, **dict(product))
 
     async def get_all(self) -> Iterable[Product]:
         query = product_table.select()
