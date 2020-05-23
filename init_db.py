@@ -51,10 +51,30 @@ def insert_tokens(conn):
     conn.execute(token_table.insert(), tokens)
 
 
+def insert_products(conn):
+    conn.execute(product_table.insert(), [{
+        'name': 'Chocolate',
+        'description': 'Delicious chocolate',
+        'price': 2.5,
+        'left_in_stock': 10
+    }, {
+        'name': 'Juice',
+        'description': 'Fruit juice',
+        'price': 1.3,
+        'left_in_stock': 17
+    }, {
+        'name': 'Gamburger',
+        'description': 'Very tasty gamburger...',
+        'price': 4.2,
+        'left_in_stock': 3
+    }])
+
+
 def seed_db(engine):
     with engine.connect() as conn:
         insert_users(conn)
         insert_tokens(conn)
+        insert_products(conn)
 
 
 if __name__ == '__main__':
