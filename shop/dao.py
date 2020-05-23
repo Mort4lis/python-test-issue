@@ -5,9 +5,9 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 
-from .db import token_table, user_table
+from .db import product_table, token_table, user_table
 from .exceptions import TokenNotFoundException, UserNotFoundException
-from .storage import AccessToken, User
+from .storage import AccessToken, Product, User
 
 
 class UserDAO(ABC):
@@ -143,3 +143,21 @@ class SqlAlchemyTokenDAO(AccessTokenDAO):
             raise TokenNotFoundException
 
         return AccessToken(**row)
+
+
+class ProductDAO(ABC):
+    @abstractmethod
+    async def get_all(self) -> Iterable[Product]:
+        pass
+
+
+class SqlAlchemyProductDAO(ProductDAO):
+    def __init__(self, conn: SAConnection):
+        self.conn = conn
+
+    async def get_all(self) -> Iterable[Product]:
+        query = product_table.select()
+        result = await self.conn.execute(query)
+        rows = await result.fetchall()
+        products = [Product(**row) for row in rows]
+        return products

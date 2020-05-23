@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from aiopg.sa import create_engine
-from sqlalchemy import (Column, DECIMAL, Enum, ForeignKey, Integer, MetaData, String, Table, Text)
+from sqlalchemy import (Column, Enum, ForeignKey, Integer, MetaData, Numeric, String, Table, Text)
 from sqlalchemy.dialects.postgresql import UUID
 
 meta = MetaData()
@@ -62,7 +62,7 @@ product_table = Table(
     Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
     Column('name', String(255), nullable=False),
     Column('description', Text, nullable=False),
-    Column('price', DECIMAL, nullable=False),
+    Column('price', Numeric, nullable=False),
     Column('left_in_stock', Integer, nullable=False)
 )
 

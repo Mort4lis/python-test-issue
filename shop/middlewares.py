@@ -1,6 +1,6 @@
 from aiohttp.web import middleware
 
-from shop.dao import SqlAlchemyTokenDAO, SqlAlchemyUserDAO
+from shop.dao import SqlAlchemyTokenDAO, SqlAlchemyUserDAO, SqlAlchemyProductDAO
 
 
 @middleware
@@ -9,6 +9,7 @@ async def dao_middleware(request, handler):
         dao_instances = {
             'user': SqlAlchemyUserDAO(conn),
             'token': SqlAlchemyTokenDAO(conn),
+            'product': SqlAlchemyProductDAO(conn)
             # others dao ...
         }
         request.app['dao'] = dao_instances
