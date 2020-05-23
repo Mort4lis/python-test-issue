@@ -4,6 +4,8 @@ from aiohttp.web import Response, View, json_response
 from aiohttp_validate import validate
 
 from .auth import check_credentials, get_access_token
+from .exceptions import ProductNotFoundException
+from .schemas import AUTH_SCHEMA, PRODUCT_SCHEMA
 from .services import ProductService
 from .storage import Product
 from .utils import JsonEncoder
@@ -12,14 +14,7 @@ from .utils import JsonEncoder
 class LoginView(View):
     """View аутентификации."""
 
-    @validate(request_schema={
-        'type': 'object',
-        'properties': {
-            'login': {'type': 'string'},
-            'password': {'type': 'string'}
-        },
-        'required': ['login', 'password']
-    })
+    @validate(request_schema=AUTH_SCHEMA)
     async def post(self, *args) -> Response:
         """
         Аутентификация пользователя.
@@ -44,16 +39,7 @@ class ProductListCreateView(View):
         body = json.dumps([product.__dict__ for product in products], cls=JsonEncoder)
         return Response(status=200, text=body, content_type='application/json')
 
-    @validate(request_schema={
-        'type': 'object',
-        'properties': {
-            'name': {'type': 'string', 'minLength': 1, 'maxLength': 255},
-            'description': {'type': 'string', 'minLength': 5},
-            'price': {'type': 'number', 'minimum': 0.1},
-            'left_in_stock': {'type': 'integer', 'minimum': 1}
-        },
-        'required': ['name', 'description', 'price', 'left_in_stock']
-    })
+    @validate(request_schema=PRODUCT_SCHEMA)
     async def post(self, *args) -> Response:
         """Endpoint создания продуктов."""
         data = await self.request.json()
@@ -70,14 +56,58 @@ class ProductListCreateView(View):
 
 
 class ProductRetrieveUpdateDeleteView(View):
-    async def get(self):
-        return json_response(data={'get': self.request.match_info['uuid']})
+    async def get(self) -> Response:
+        """
+        Endpoint, возвращающий представление конкретного продукта по slug.
 
-    async def put(self):
-        return json_response(data={'put': self.request.match_info['uuid']})
+        :return: ответ, содержащий json-представление продукта или 404 статус
+        """
+        service = ProductService(dao=self.request.app['dao']['product'])
+        try:
+            product = await service.get_by_slug(slug=self.request.match_info['slug'])
+        except ProductNotFoundException:
+            return json_response(status=404, data={'error': 'Product not found'})
 
-    async def delete(self):
-        return json_response(data={'delete': self.request.match_info['uuid']})
+        body = json.dumps(product.__dict__, cls=JsonEncoder)
+        return Response(status=200, text=body, content_type='application/json')
+
+    @validate(request_schema=PRODUCT_SCHEMA)
+    async def put(self, *args) -> Response:
+        """
+        Endpoint, возвращающий обновленное представление продукта по slug.
+
+        Принимает тело запроса и обновляет выбранный продукт.
+
+        :return: ответ, содержащий json-представление обновленного продукта или 404 статус
+        """
+        data = await self.request.json()
+        service = ProductService(dao=self.request.app['dao']['product'])
+        try:
+            product = await service.get_by_slug(slug=self.request.match_info['slug'])
+        except ProductNotFoundException:
+            return json_response(status=404, data={'error': 'Product not found'})
+
+        for prop, value in data.items():
+            setattr(product, prop, value)
+
+        product = await service.update(product)
+        body = json.dumps(product.__dict__, cls=JsonEncoder)
+        return Response(status=200, text=body, content_type='application/json')
+
+    async def delete(self) -> Response:
+        """
+        Endpoint, удаляющий продукт по его slug.
+
+        :return: ответ (204-No Content) в случае успеха или 404 статус
+        """
+        service = ProductService(dao=self.request.app['dao']['product'])
+        try:
+            product = await service.get_by_slug(slug=self.request.match_info['slug'])
+        except ProductNotFoundException:
+            return json_response(status=404, data={'error': 'Product not found'})
+
+        await service.delete(product)
+        return Response(status=204)
 
 
 async def index(request):

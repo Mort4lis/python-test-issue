@@ -50,9 +50,27 @@ class ProductService:
 
     async def create(self, product: Product) -> Product:
         """
-        Создание продукта.
+        Создать продукта.
 
         :param product: экземпляр продукта, который необходимо создать
         :return: созданный экземпляр продукта
         """
         return await self.dao.create(product=product)
+
+    async def update(self, product: Product) -> Product:
+        """
+        Обновить продукт.
+
+        :param product: экземпляр продукта с данными, которые необходимо обновить
+        :return: обновленный экземпляр продукта
+        """
+        return await self.dao.update(product=product)
+
+    async def delete(self, product: Product) -> Product:
+        """
+        Удалить продукт.
+
+        :param product: экземпляр продукта, который необходимо удалить
+        :return: удаленный экземпляр продукта
+        """
+        return await self.dao.delete(product=product)

@@ -173,6 +173,15 @@ class ProductDAO(ABC):
         pass
 
     @abstractmethod
+    async def get_all(self) -> Iterable[Product]:
+        """
+        Вернуть коллекцию всех продуктов.
+
+        :return: коллекция объектов класса `Product`
+        """
+        pass
+
+    @abstractmethod
     async def create(self, product: Product) -> Product:
         """
         Создать продукт.
@@ -187,11 +196,22 @@ class ProductDAO(ABC):
         pass
 
     @abstractmethod
-    async def get_all(self) -> Iterable[Product]:
+    async def update(self, product: Product) -> Product:
         """
-        Вернуть коллекцию всех продуктов.
+        Обновить продукт.
 
-        :return: коллекция объектов класса `Product`
+        :param product: экземпляр продукта с данными, которые необходимо обновить
+        :return: обновленный экземпляр продукта
+        """
+        pass
+
+    @abstractmethod
+    async def delete(self, product: Product) -> Product:
+        """
+        Удалить продукт.
+
+        :param product: экземпляр продукта, который необходимо удалить
+        :return: удаленный экземпляр продукта
         """
         pass
 
@@ -210,6 +230,13 @@ class SqlAlchemyProductDAO(ProductDAO):
 
         return Product(**row)
 
+    async def get_all(self) -> Iterable[Product]:
+        query = product_table.select()
+        result = await self.conn.execute(query)
+        rows = await result.fetchall()
+        products = [Product(**row) for row in rows]
+        return products
+
     async def create(self, product: Product) -> Product:
         insert = product_table.insert(). \
             values(**dict(product)). \
@@ -218,9 +245,14 @@ class SqlAlchemyProductDAO(ProductDAO):
         inserted_primary_key = await result.scalar()
         return Product(id=inserted_primary_key, **dict(product))
 
-    async def get_all(self) -> Iterable[Product]:
-        query = product_table.select()
-        result = await self.conn.execute(query)
-        rows = await result.fetchall()
-        products = [Product(**row) for row in rows]
-        return products
+    async def update(self, product: Product) -> Product:
+        query = product_table.update(). \
+            where(product_table.c.id == product.id). \
+            values(**dict(product))
+        await self.conn.execute(query)
+        return product
+
+    async def delete(self, product: Product) -> Product:
+        query = product_table.delete().where(product_table.c.id == product.id)
+        await self.conn.execute(query)
+        return product
