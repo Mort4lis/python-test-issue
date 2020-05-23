@@ -125,7 +125,3 @@ class ProductRetrieveUpdateDeleteView(View):
 
         await service.delete(product)
         return Response(status=204)
-
-
-async def index(request):
-    return json_response(data={'message': 'Hello, world!'})

@@ -1,8 +1,8 @@
 from typing import Iterable
 
 from .dao import ProductDAO
-from .storage import Product
 from .exceptions import ProductNotFoundException
+from .storage import Product
 
 
 class ProductService:

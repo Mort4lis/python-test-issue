@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Generator, Optional
 from uuid import UUID
 
 
@@ -89,7 +89,8 @@ class Product:
         if not slug:
             self.slug = '-'.join(name.split(' ')).lower()
 
-    def __iter__(self):
+    def __iter__(self) -> Generator:
+        """Реализация интерфейса итератора в виде генератора."""
         for key, value in self.__dict__.items():
             if key == 'id' and value is None:
                 continue

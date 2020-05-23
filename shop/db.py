@@ -9,6 +9,8 @@ meta = MetaData()
 
 
 class Gender(enum.Enum):
+    """Перечисление (Enum) полов."""
+
     male = 'Мужской'
     female = 'Женский'
 
@@ -69,11 +71,13 @@ product_table = Table(
 
 
 async def init_pg(app):
+    """Инициализация объекта engine БД."""
     config = app['config']['postgres']
     engine = await create_engine(**config)
     app['db'] = engine
 
 
 async def close_pg(app):
+    """Завершение всех соединенией с БД."""
     app['db'].close()
     await app['db'].wait_closed()

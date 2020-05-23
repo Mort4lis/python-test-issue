@@ -11,15 +11,19 @@ from shop.settings import config
 from shop.storage import User
 
 
-async def init():
+async def init() -> web.Application:
+    """
+    Инициализация aiohttp-приложения.
+
+    :return: экземпляр aiohttp-приложения
+    """
     async def user_loader(token: str) -> Optional[User]:
         """
         Проверить валидность переданного токена.
 
-        В случае, если токен найден в БД - вернет экземпляр класса `shop.storage.User`.
-        В противном случае - None.
-
         :param token: Токен из HTTP заголовка "Authorization"
+        :return: если токен найден в БД - вернет экземпляр класса `User`,
+                 в противном случае - None
         """
         user_dao = app['dao']['user']
         try:

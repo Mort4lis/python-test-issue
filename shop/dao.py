@@ -4,6 +4,7 @@ from uuid import UUID
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
+from overrides import overrides
 
 from .db import product_table, token_table, user_table
 from .exceptions import ProductNotFoundException, TokenNotFoundException, UserNotFoundException
@@ -86,27 +87,42 @@ class UserDAO(ABC):
         pass
 
 
-class SqlAlchemyUserDAO(UserDAO):
-    """Реализация абстрактного слоя доступа к БД (DAO) для сущности Пользователь (User)."""
+class BaseSqlAlchemyDAO(ABC):
+    """Базовый DAO-класс, инкапсулирующий в себе конструктор, принимающий подключение к БД."""
 
     def __init__(self, conn: SAConnection) -> None:
+        """
+        Инициализация DAO-экземпляра.
+
+        :param conn: экземпляр подключения к БД
+        """
         self.conn = conn
 
+
+class SqlAlchemyUserDAO(BaseSqlAlchemyDAO, UserDAO):
+    """Реализация абстрактного слоя доступа к БД (DAO) для сущности Пользователь (User)."""
+
+    @overrides
     async def create(self, user: User) -> User:
         pass
 
+    @overrides
     async def update(self, user: User) -> User:
         pass
 
+    @overrides
     async def delete(self, user_id: UUID) -> None:
         pass
 
+    @overrides
     async def get_all(self) -> Iterable[User]:
         pass
 
+    @overrides
     async def get_by_id(self, user_id: UUID) -> User:
         pass
 
+    @overrides
     async def get_by_login(self, login: str) -> User:
         query = user_table.select().where(user_table.c.login == login)
         result = await self.conn.execute(query)
@@ -117,6 +133,7 @@ class SqlAlchemyUserDAO(UserDAO):
 
         return User(**row)
 
+    @overrides
     async def get_by_token(self, token: str) -> User:
         join = sa.join(user_table, token_table, user_table.c.id == token_table.c.user_id)
         query = user_table.select().select_from(join).where(token_table.c.token == token)
@@ -130,6 +147,8 @@ class SqlAlchemyUserDAO(UserDAO):
 
 
 class AccessTokenDAO(ABC):
+    """Реализация абстрактного слоя доступа к БД (DAO) для сущности Токен (AccessToken)."""
+
     @abstractmethod
     async def get_by_login(self, login: str) -> AccessToken:
         """
@@ -141,12 +160,10 @@ class AccessTokenDAO(ABC):
         pass
 
 
-class SqlAlchemyTokenDAO(AccessTokenDAO):
+class SqlAlchemyTokenDAO(BaseSqlAlchemyDAO, AccessTokenDAO):
     """Реализация абстрактного слоя доступа к БД (DAO) для сущности Токен (AccessToken)."""
 
-    def __init__(self, conn: SAConnection) -> None:
-        self.conn = conn
-
+    @overrides
     async def get_by_login(self, login: str) -> AccessToken:
         join = sa.join(user_table, token_table, user_table.c.id == token_table.c.user_id)
         query = token_table.select().select_from(join).where(user_table.c.login == login)
@@ -216,10 +233,10 @@ class ProductDAO(ABC):
         pass
 
 
-class SqlAlchemyProductDAO(ProductDAO):
-    def __init__(self, conn: SAConnection) -> None:
-        self.conn = conn
+class SqlAlchemyProductDAO(BaseSqlAlchemyDAO, ProductDAO):
+    """Реализация абстрактного слоя доступа к БД (DAO) для сущности Продукт (Product)."""
 
+    @overrides
     async def get_by_slug(self, slug: str) -> Product:
         query = product_table.select().where(product_table.c.slug == slug)
         result = await self.conn.execute(query)
@@ -230,6 +247,7 @@ class SqlAlchemyProductDAO(ProductDAO):
 
         return Product(**row)
 
+    @overrides
     async def get_all(self) -> Iterable[Product]:
         query = product_table.select()
         result = await self.conn.execute(query)
@@ -237,6 +255,7 @@ class SqlAlchemyProductDAO(ProductDAO):
         products = [Product(**row) for row in rows]
         return products
 
+    @overrides
     async def create(self, product: Product) -> Product:
         insert = product_table.insert(). \
             values(**dict(product)). \
@@ -245,6 +264,7 @@ class SqlAlchemyProductDAO(ProductDAO):
         inserted_primary_key = await result.scalar()
         return Product(id=inserted_primary_key, **dict(product))
 
+    @overrides
     async def update(self, product: Product) -> Product:
         query = product_table.update(). \
             where(product_table.c.id == product.id). \
@@ -252,6 +272,7 @@ class SqlAlchemyProductDAO(ProductDAO):
         await self.conn.execute(query)
         return product
 
+    @overrides
     async def delete(self, product: Product) -> Product:
         query = product_table.delete().where(product_table.c.id == product.id)
         await self.conn.execute(query)
