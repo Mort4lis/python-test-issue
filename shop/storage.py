@@ -55,3 +55,28 @@ class AccessToken:
         self.id = id
         self.token = token
         self.user_id = user_id
+
+
+class Product:
+    """Класс продуктов."""
+
+    def __init__(self,
+                 id: UUID,
+                 name: str,
+                 description: str,
+                 price: float,
+                 left_in_stock: int) -> None:
+        """
+        Конструктор инициализации экземпляра класса Продукт.
+
+        :param id: идентификатор продукта
+        :param name: наименование продукта
+        :param description: описание продукта
+        :param price: цена продукта
+        :param left_in_stock: количество оставшихся продуктов данного типа на складе
+        """
+        self.id = id
+        self.name = name
+        self.description = description
+        self.price = price
+        self.left_in_stock = left_in_stock
