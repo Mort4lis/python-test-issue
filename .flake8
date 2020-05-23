@@ -1,0 +1,14 @@
+[flake8]
+ignore=
+     # D106: Missing docstring in public nested class
+     D106,
+     # D100: Missing docstring in public module
+     D100
+application-import-names=shop
+max-line-length=119
+exclude=__init__.py, init_db.py, venv/
+max-complexity=10
+import-order-style=pycharm
+inline-quotes='
+ignore-decorators=overrides
+docstring-convention=pep257
