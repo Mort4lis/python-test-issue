@@ -18,7 +18,12 @@ class UserDAO(ABC):
         """
         Создать пользователя.
 
-        :param user: экземпляр класса `User`
+        Данный метод принимает на вход экземпляр класса `User`,
+        у которого id=None. А возвращает другой экзампляр класса `User`,
+        с установленным id (первичным ключом).
+
+        :param user: экземпляр класса `User`, который необходимо создать
+        :return: созданный экземпляр класса `User`
         """
         pass
 
@@ -27,7 +32,8 @@ class UserDAO(ABC):
         """
         Обновить пользователя.
 
-        :param user: экземпляр класса `User`
+        :param user: экземпляр класса `User`, который необходимо обновить
+        :return: обновленный экземпляр класса `User`
         """
         pass
 
@@ -42,7 +48,11 @@ class UserDAO(ABC):
 
     @abstractmethod
     async def get_all(self) -> Iterable[User]:
-        """Вернуть колекцию пользователей."""
+        """
+        Вернуть колекцию пользователей.
+
+        :return: коллекция экземпляров класса `User`
+        """
         pass
 
     @abstractmethod
@@ -51,6 +61,7 @@ class UserDAO(ABC):
         Получить пользователя по уникальному идентификатору.
 
         :param user_id: идентификатор пользователя
+        :return: найденный экземпляр класса `User`
         """
         pass
 
@@ -60,6 +71,7 @@ class UserDAO(ABC):
         Получить пользователя по логину.
 
         :param login: логин пользователя
+        :return: найденный экземпляр класса `User`
         """
         pass
 
@@ -69,6 +81,7 @@ class UserDAO(ABC):
         Получить пользователя по токену доступа.
 
         :param token: токен доступа
+        :return: найденный экземпляр класса `User`
         """
         pass
 
@@ -123,6 +136,7 @@ class AccessTokenDAO(ABC):
         Получить токен по логину пользователя.
 
         :param login: логин пользователя
+        :return: найденный экземпляр класса `AccessToken`
         """
         pass
 
@@ -130,7 +144,7 @@ class AccessTokenDAO(ABC):
 class SqlAlchemyTokenDAO(AccessTokenDAO):
     """Реализация абстрактного слоя доступа к БД (DAO) для сущности Токен (AccessToken)."""
 
-    def __init__(self, conn: SAConnection):
+    def __init__(self, conn: SAConnection) -> None:
         self.conn = conn
 
     async def get_by_login(self, login: str) -> AccessToken:
@@ -146,17 +160,34 @@ class SqlAlchemyTokenDAO(AccessTokenDAO):
 
 
 class ProductDAO(ABC):
+    """Абстрактный слой доступа к БД (DAO) для сущности Продукт (Product)."""
+
     @abstractmethod
     async def create(self, product: Product) -> Product:
+        """
+        Создать продукт.
+
+        Данный метод принимает на вход экземпляр класса `Product`,
+        у которого id=None. А возвращает другой экзампляр класса `Product`,
+        с установленным id (первичным ключом).
+
+        :param product: экземпляр продукта, который необходимо создать
+        :return: созданный экземпляр продукта
+        """
         pass
 
     @abstractmethod
     async def get_all(self) -> Iterable[Product]:
+        """
+        Вернуть коллекцию всех продуктов.
+
+        :return: коллекция объектов класса `Product`
+        """
         pass
 
 
 class SqlAlchemyProductDAO(ProductDAO):
-    def __init__(self, conn: SAConnection):
+    def __init__(self, conn: SAConnection) -> None:
         self.conn = conn
 
     async def create(self, product: Product) -> Product:

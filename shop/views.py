@@ -37,6 +37,7 @@ class LoginView(View):
 
 class ProductListCreateView(View):
     async def get(self) -> Response:
+        """Endpoint вывода всех продуктов."""
         dao = self.request.app['dao']['product']
         service = ProductService(dao=dao)
         products = await service.get_all()
@@ -53,7 +54,8 @@ class ProductListCreateView(View):
         },
         'required': ['name', 'description', 'price', 'left_in_stock']
     })
-    async def post(self, *args):
+    async def post(self, *args) -> Response:
+        """Endpoint создания продуктов."""
         data = await self.request.json()
         service = ProductService(dao=self.request.app['dao']['product'])
         created = await service.create(product=Product(id=None, **data))
