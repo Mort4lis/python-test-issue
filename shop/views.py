@@ -19,7 +19,8 @@ class LoginView(View):
         """
         Аутентификация пользователя.
 
-        Возвращает ответ с телом токена в случае успешной аутентификации.
+        :return: ответ 200 (OK), содержащий тело токена в случае успешной аутентификации;
+                 ответ 400 (Bad Request), если были переданы некорректные аутентификационные данные
         """
         dao_instances = self.request.app['dao']
         credentials = await self.request.json()
@@ -31,8 +32,14 @@ class LoginView(View):
 
 
 class ProductListCreateView(View):
+    """View создания и получения списка продуктов."""
+
     async def get(self) -> Response:
-        """Endpoint вывода всех продуктов."""
+        """
+        Endpoint вывода всех продуктов.
+
+        :return: ответ 200 (OK), содержащий коллекцию json-представлений продуктов
+        """
         dao = self.request.app['dao']['product']
         service = ProductService(dao=dao)
         products = await service.get_all()
@@ -41,7 +48,12 @@ class ProductListCreateView(View):
 
     @validate(request_schema=PRODUCT_SCHEMA)
     async def post(self, *args) -> Response:
-        """Endpoint создания продуктов."""
+        """
+        Endpoint создания продуктов.
+
+        :return: ответ 201 (Created), содержащий json-представление продукта в случае успеха;
+                 ответ 400 (Bad Request), если данный продукт уже существует или были переданы некорректные данные
+        """
         data = await self.request.json()
         service = ProductService(dao=self.request.app['dao']['product'])
 
@@ -52,15 +64,18 @@ class ProductListCreateView(View):
 
         created = await service.create(product=product)
         body = json.dumps(created.__dict__, cls=JsonEncoder)
-        return Response(status=200, text=body, content_type='application/json')
+        return Response(status=201, text=body, content_type='application/json')
 
 
 class ProductRetrieveUpdateDeleteView(View):
+    """View получения/обновления/удаления конкретного продукта."""
+
     async def get(self) -> Response:
         """
         Endpoint, возвращающий представление конкретного продукта по slug.
 
-        :return: ответ, содержащий json-представление продукта или 404 статус
+        :return: ответ 200 (OK), содержащий json-представление продукта;
+                 ответ 404 (Not Found), если продукт не был найден
         """
         service = ProductService(dao=self.request.app['dao']['product'])
         try:
@@ -78,7 +93,8 @@ class ProductRetrieveUpdateDeleteView(View):
 
         Принимает тело запроса и обновляет выбранный продукт.
 
-        :return: ответ, содержащий json-представление обновленного продукта или 404 статус
+        :return: ответ 200 (OK), содержащий json-представление обновленного продукта;
+                 ответ 404 (Not Found), если продукт не был найден
         """
         data = await self.request.json()
         service = ProductService(dao=self.request.app['dao']['product'])
@@ -98,7 +114,8 @@ class ProductRetrieveUpdateDeleteView(View):
         """
         Endpoint, удаляющий продукт по его slug.
 
-        :return: ответ (204-No Content) в случае успеха или 404 статус
+        :return: ответ 204 (No Content) в случае успешного удаления продукта;
+                 ответ 404 (Not Found) если продукт не был найден
         """
         service = ProductService(dao=self.request.app['dao']['product'])
         try:
