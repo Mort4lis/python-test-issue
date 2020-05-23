@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 
 from .db import product_table, token_table, user_table
-from .exceptions import TokenNotFoundException, UserNotFoundException
+from .exceptions import ProductNotFoundException, TokenNotFoundException, UserNotFoundException
 from .storage import AccessToken, Product, User
 
 
@@ -163,6 +163,16 @@ class ProductDAO(ABC):
     """Абстрактный слой доступа к БД (DAO) для сущности Продукт (Product)."""
 
     @abstractmethod
+    async def get_by_slug(self, slug: str) -> Product:
+        """
+        Получить продукт по slug.
+
+        :raise ProductNotFoundException: исключение в случае неудачного поиска
+        :return: найденный экземпляр продукта
+        """
+        pass
+
+    @abstractmethod
     async def create(self, product: Product) -> Product:
         """
         Создать продукт.
@@ -189,6 +199,16 @@ class ProductDAO(ABC):
 class SqlAlchemyProductDAO(ProductDAO):
     def __init__(self, conn: SAConnection) -> None:
         self.conn = conn
+
+    async def get_by_slug(self, slug: str) -> Product:
+        query = product_table.select().where(product_table.c.slug == slug)
+        result = await self.conn.execute(query)
+        row = await result.fetchone()
+
+        if row is None:
+            raise ProductNotFoundException
+
+        return Product(**row)
 
     async def create(self, product: Product) -> Product:
         insert = product_table.insert(). \

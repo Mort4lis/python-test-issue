@@ -55,16 +55,19 @@ def insert_products(conn):
     conn.execute(product_table.insert(), [{
         'name': 'Chocolate',
         'description': 'Delicious chocolate',
+        'slug': 'chocolate',
         'price': 2.5,
         'left_in_stock': 10
     }, {
         'name': 'Juice',
         'description': 'Fruit juice',
+        'slug': 'juice',
         'price': 1.3,
         'left_in_stock': 17
     }, {
         'name': 'Gamburger',
         'description': 'Very tasty gamburger...',
+        'slug': 'burger',
         'price': 4.2,
         'left_in_stock': 3
     }])

@@ -58,9 +58,26 @@ class ProductListCreateView(View):
         """Endpoint создания продуктов."""
         data = await self.request.json()
         service = ProductService(dao=self.request.app['dao']['product'])
-        created = await service.create(product=Product(id=None, **data))
+
+        product = Product(**data)
+        if await service.exists_by_slug(slug=product.slug):
+            return json_response(status=400,
+                                 data={'error': 'Product with this slug is already exists'})
+
+        created = await service.create(product=product)
         body = json.dumps(created.__dict__, cls=JsonEncoder)
         return Response(status=200, text=body, content_type='application/json')
+
+
+class ProductRetrieveUpdateDeleteView(View):
+    async def get(self):
+        return json_response(data={'get': self.request.match_info['uuid']})
+
+    async def put(self):
+        return json_response(data={'put': self.request.match_info['uuid']})
+
+    async def delete(self):
+        return json_response(data={'delete': self.request.match_info['uuid']})
 
 
 async def index(request):

@@ -8,3 +8,7 @@ class UserNotFoundException(DAOException):
 
 class TokenNotFoundException(DAOException):
     pass
+
+
+class ProductNotFoundException(DAOException):
+    pass

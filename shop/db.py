@@ -62,6 +62,7 @@ product_table = Table(
     Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
     Column('name', String(255), nullable=False),
     Column('description', Text, nullable=False),
+    Column('slug', String(255), unique=True, nullable=False),
     Column('price', Numeric, nullable=False),
     Column('left_in_stock', Integer, nullable=False)
 )

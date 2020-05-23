@@ -1,6 +1,6 @@
 from enum import Enum
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
 
 
 class User:
@@ -62,25 +62,32 @@ class Product:
     """Класс продуктов."""
 
     def __init__(self,
-                 id: Optional[UUID],
                  name: str,
                  description: str,
                  price: float,
-                 left_in_stock: int) -> None:
+                 left_in_stock: int,
+                 *,
+                 id: Optional[UUID] = None,
+                 slug: Optional[str] = None) -> None:
         """
         Конструктор инициализации экземпляра класса Продукт.
 
-        :param id: идентификатор продукта
         :param name: наименование продукта
         :param description: описание продукта
         :param price: цена продукта
         :param left_in_stock: количество оставшихся продуктов данного типа на складе
+        :param id: идентификатор продукта
+        :param slug: короткое наименование продукта
         """
         self.id = id
         self.name = name
         self.description = description
+        self.slug = slug
         self.price = price
         self.left_in_stock = left_in_stock
+
+        if not slug:
+            self.slug = '-'.join(name.split(' ')).lower()
 
     def __iter__(self):
         for key, value in self.__dict__.items():
