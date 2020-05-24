@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
+from uuid import UUID
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from overrides import overrides
 
 from .db import order_product_table, order_table, product_table, token_table, user_order_table, user_table
-from .exceptions import ProductNotFoundException, TokenNotFoundException, UserNotFoundException
+from .exceptions import (OrderNotFoundException, ProductNotFoundException, TokenNotFoundException,
+                         UserNotFoundException)
 from .storage import AccessToken, Order, OrderProduct, Product, User, UserOrder
 
 
@@ -109,6 +111,16 @@ class OrderDAO(ABC):
     """Абстрактный слой доступа к БД (DAO) для сущности Заказ (Order)."""
 
     @abstractmethod
+    async def get_by_number(self, number: int) -> Order:
+        """
+        Получить заказ по его номеру.
+
+        :param number: номер заказа
+        :return: найденный экземпляр заказа
+        """
+        pass
+
+    @abstractmethod
     async def create(self) -> Order:
         """
         Создать заказ.
@@ -120,6 +132,16 @@ class OrderDAO(ABC):
 
 class OrderProductDAO(ABC):
     """Абстрактный слой доступа к БД (DAO) для связи Продуктов и Заказов (OrderProduct)."""
+
+    @abstractmethod
+    async def get_all(self, order_id: UUID) -> Iterable[OrderProduct]:
+        """
+        Получить все связи продукта и заказа по идентификатора заказа.
+
+        :param order_id: идентификатор заказа
+        :return: коллекция экземпляров связей
+        """
+        pass
 
     @abstractmethod
     async def create(self, order_product: OrderProduct) -> OrderProduct:
@@ -134,6 +156,16 @@ class OrderProductDAO(ABC):
 
 class UserOrderDAO(ABC):
     """Абстрактный слой доступа к БД (DAO) для связи Пользователей и Заказов (UserOrder)."""
+
+    @abstractmethod
+    async def exists(self, user_order: UserOrder) -> bool:
+        """
+        Проверка на существование связи пользователя и продукта.
+
+        :param user_order: проверяемый экземпляр свзи
+        :return: булево значение в зависимости от результата
+        """
+        pass
 
     @abstractmethod
     async def create(self, user_order: UserOrder) -> UserOrder:
@@ -251,6 +283,18 @@ class SqlAlchemyOrderDAO(BaseSqlAlchemyDAO, OrderDAO):
     """Реализация абстрактного слоя доступа к БД (DAO) для сущности Заказ (Order)."""
 
     @overrides
+    async def get_by_number(self, number: int) -> Order:
+        query = order_table.select(). \
+            where(order_table.c.number == number)
+        result = await self.conn.execute(query)
+        row = await result.fetchone()
+
+        if row is None:
+            raise OrderNotFoundException
+
+        return Order(**row)
+
+    @overrides
     async def create(self) -> Order:
         query = order_table.insert(). \
             values(). \
@@ -264,6 +308,14 @@ class SqlAlchemyOrderProductDAO(BaseSqlAlchemyDAO, OrderProductDAO):
     """Реализация абстрактного слоя доступа к БД (DAO) для связи Продуктов и Заказов (OrderProduct)."""
 
     @overrides
+    async def get_all(self, order_id: UUID) -> Iterable[OrderProduct]:
+        query = order_product_table.select(). \
+            where(order_product_table.c.order_id == order_id)
+        result = await self.conn.execute(query)
+        rows = await result.fetchall()
+        return [OrderProduct(**row) for row in rows]
+
+    @overrides
     async def create(self, order_product: OrderProduct) -> OrderProduct:
         query = order_product_table.insert().values(**dict(order_product))
         await self.conn.execute(query)
@@ -272,6 +324,17 @@ class SqlAlchemyOrderProductDAO(BaseSqlAlchemyDAO, OrderProductDAO):
 
 class SqlAlchemyUserOrderDAO(BaseSqlAlchemyDAO, UserOrderDAO):
     """Реализация абстрактного слоя доступа к БД (DAO) для связи Пользователей и Заказов (UserOrder)."""
+
+    @overrides
+    async def exists(self, user_order: UserOrder) -> bool:
+        query = sa.exists().where(
+            sa.and_(
+                user_order_table.c.user_id == user_order.user_id,
+                user_order_table.c.order_id == user_order.order_id
+            )
+        ).select()
+        result = await self.conn.execute(query)
+        return await result.scalar()
 
     @overrides
     async def create(self, user_order: UserOrder) -> UserOrder:

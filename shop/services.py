@@ -5,7 +5,8 @@ from passlib.hash import sha256_crypt
 from .dao import (AccessTokenDAO, OrderDAO, OrderProductDAO, ProductDAO, SqlAlchemyOrderDAO, SqlAlchemyOrderProductDAO,
                   SqlAlchemyProductDAO, SqlAlchemyTokenDAO, SqlAlchemyUserDAO, SqlAlchemyUserOrderDAO, UserDAO,
                   UserOrderDAO)
-from .exceptions import ProductNotEnoughException, ProductNotFoundException, UserNotFoundException
+from .exceptions import (OrderNotFoundException, ProductNotEnoughException, ProductNotFoundException,
+                         UserNotFoundException)
 from .storage import Order, OrderProduct, Product, User, UserOrder
 
 
@@ -146,6 +147,24 @@ class OrderService:
         self.product_dao = product_dao
         self.order_product_dao = order_product_dao
         self.user_order_dao = user_order_dao
+
+    async def get_by_number(self, user: User, number: int) -> Tuple[Order, Iterable[OrderProduct]]:
+        """
+        Получить заказ по его номеру.
+
+        :param user:
+        :param number: номер заказа
+        :return: кортеж вида (заказ, список продуктов для заказа)
+
+        :raise OrderNotFoundException: выбрасывается в случае, если заказ не был найден,
+            либо он принадлежит другому пользователю
+        """
+        order = await self.order_dao.get_by_number(number)
+        user_order = UserOrder(user_id=user.id, order_id=order.id)
+        if not await self.user_order_dao.exists(user_order):
+            raise OrderNotFoundException
+        order_products = await self.order_product_dao.get_all(order_id=order.id)
+        return order, order_products
 
     async def create(self,
                      user: User,

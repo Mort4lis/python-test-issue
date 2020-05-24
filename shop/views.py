@@ -3,7 +3,7 @@ import json
 from aiohttp.web import Response, View, json_response
 from aiohttp_validate import validate
 
-from .exceptions import ProductNotEnoughException, ProductNotFoundException
+from .exceptions import OrderNotFoundException, ProductNotEnoughException, ProductNotFoundException
 from .mixins import (AccessTokenServiceViewMixin, AuthServiceViewMixin,
                      OrderServiceViewMixin, ProductServiceViewMixin)
 from .schemas import AUTH_SCHEMA, ORDER_PRODUCT_SCHEMA, PRODUCT_SCHEMA
@@ -156,3 +156,26 @@ class OrderListCreateView(ProductServiceViewMixin, OrderServiceViewMixin, View):
         order_dict['products'] = [dict(product) for product in order_products]
         body = json.dumps(order_dict, cls=JsonEncoder)
         return Response(status=201, text=body, content_type='application/json')
+
+
+class OrderRetrieveUpdateDeleteView(OrderServiceViewMixin, View):
+    """View получения/обновления/удаления конкретного заказа."""
+
+    async def get(self):
+        """
+        Endpoint получения конкретного заказа.
+
+        :return: ответ 200 (OK), содержащий json-представление заказа и его продуктов;
+                 ответ 404 (Not Found), в случае, если заказ не был найден, либо принадлежит другому пользователю
+        """
+        order_number = int(self.request.match_info['number'])
+        try:
+            order, order_products = await self.order_service.get_by_number(
+                user=self.request['user'], number=order_number)
+        except OrderNotFoundException:
+            return json_response(status=404, data={'error': 'Order not found'})
+
+        order_dict = dict(order)
+        order_dict['products'] = [dict(product) for product in order_products]
+        body = json.dumps(order_dict, cls=JsonEncoder)
+        return Response(status=200, text=body, content_type='application/json')

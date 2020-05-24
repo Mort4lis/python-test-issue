@@ -31,6 +31,12 @@ class ProductNotFoundException(DAOException):
     pass
 
 
+class OrderNotFoundException(DAOException):
+    """Исключение, выбрасываемое из DAO-слоя в случае, если объект заказа (Order) не найден."""
+
+    pass
+
+
 class ProductNotEnoughException(BaseShopException):
     """Исключение, выбрасываемое в случае, если продукта недостаточно на складе."""
 
