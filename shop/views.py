@@ -1,18 +1,17 @@
 import json
-from copy import deepcopy
 
 from aiohttp.web import Response, View, json_response
 from aiohttp_validate import validate
 
-from .auth import check_credentials, get_access_token
 from .exceptions import ProductNotEnoughException, ProductNotFoundException
+from .mixins import (AccessTokenServiceViewMixin, AuthServiceViewMixin,
+                     OrderServiceViewMixin, ProductServiceViewMixin)
 from .schemas import AUTH_SCHEMA, ORDER_PRODUCT_SCHEMA, PRODUCT_SCHEMA
-from .services import OrderService, ProductService
 from .storage import Product
 from .utils import JsonEncoder
 
 
-class LoginView(View):
+class LoginView(AuthServiceViewMixin, AccessTokenServiceViewMixin, View):
     """View аутентификации."""
 
     @validate(request_schema=AUTH_SCHEMA)
@@ -23,16 +22,15 @@ class LoginView(View):
         :return: ответ 200 (OK), содержащий тело токена в случае успешной аутентификации;
                  ответ 400 (Bad Request), если были переданы некорректные аутентификационные данные
         """
-        dao_instances = self.request['dao']
         credentials = await self.request.json()
-        if await check_credentials(user_dao=dao_instances['user'], **credentials):
-            token = await get_access_token(token_dao=dao_instances['token'], login=credentials['login'])
+        if await self.auth_service.check_credentials(**credentials):
+            token = await self.token_service.get_by_login(login=credentials['login'])
             return json_response(status=200, data={'token': token})
 
         return json_response(status=400, data={'error': 'Bad credentials'})
 
 
-class ProductListCreateView(View):
+class ProductListCreateView(ProductServiceViewMixin, View):
     """View создания и получения списка продуктов."""
 
     async def get(self) -> Response:
@@ -41,10 +39,8 @@ class ProductListCreateView(View):
 
         :return: ответ 200 (OK), содержащий коллекцию json-представлений продуктов
         """
-        dao = self.request['dao']['product']
-        service = ProductService(dao=dao)
-        products = await service.get_all()
-        body = json.dumps([product.__dict__ for product in products], cls=JsonEncoder)
+        products = await self.product_service.get_all()
+        body = json.dumps([dict(product) for product in products], cls=JsonEncoder)
         return Response(status=200, text=body, content_type='application/json')
 
     @validate(request_schema=PRODUCT_SCHEMA)
@@ -56,19 +52,17 @@ class ProductListCreateView(View):
                  ответ 400 (Bad Request), если данный продукт уже существует или были переданы некорректные данные
         """
         data = await self.request.json()
-        service = ProductService(dao=self.request['dao']['product'])
-
         product = Product(**data)
-        if await service.exists_by_slug(slug=product.slug):
+        if await self.product_service.exists_by_slug(slug=product.slug):
             return json_response(status=400,
                                  data={'error': 'Product with this slug is already exists'})
 
-        created = await service.create(product=product)
-        body = json.dumps(created.__dict__, cls=JsonEncoder)
+        created = await self.product_service.create(product=product)
+        body = json.dumps(dict(created), cls=JsonEncoder)
         return Response(status=201, text=body, content_type='application/json')
 
 
-class ProductRetrieveUpdateDeleteView(View):
+class ProductRetrieveUpdateDeleteView(ProductServiceViewMixin, View):
     """View получения/обновления/удаления конкретного продукта."""
 
     async def get(self) -> Response:
@@ -78,13 +72,13 @@ class ProductRetrieveUpdateDeleteView(View):
         :return: ответ 200 (OK), содержащий json-представление продукта;
                  ответ 404 (Not Found), если продукт не был найден
         """
-        service = ProductService(dao=self.request['dao']['product'])
         try:
-            product = await service.get_by_slug(slug=self.request.match_info['slug'])
+            product = await self.product_service.get_by_slug(
+                slug=self.request.match_info['slug'])
         except ProductNotFoundException:
             return json_response(status=404, data={'error': 'Product not found'})
 
-        body = json.dumps(product.__dict__, cls=JsonEncoder)
+        body = json.dumps(dict(product), cls=JsonEncoder)
         return Response(status=200, text=body, content_type='application/json')
 
     @validate(request_schema=PRODUCT_SCHEMA)
@@ -98,17 +92,17 @@ class ProductRetrieveUpdateDeleteView(View):
                  ответ 404 (Not Found), если продукт не был найден
         """
         data = await self.request.json()
-        service = ProductService(dao=self.request['dao']['product'])
         try:
-            product = await service.get_by_slug(slug=self.request.match_info['slug'])
+            product = await self.product_service.get_by_slug(
+                slug=self.request.match_info['slug'])
         except ProductNotFoundException:
             return json_response(status=404, data={'error': 'Product not found'})
 
         for prop, value in data.items():
             setattr(product, prop, value)
 
-        product = await service.update(product)
-        body = json.dumps(product.__dict__, cls=JsonEncoder)
+        product = await self.product_service.update(product)
+        body = json.dumps(dict(product), cls=JsonEncoder)
         return Response(status=200, text=body, content_type='application/json')
 
     async def delete(self) -> Response:
@@ -118,17 +112,17 @@ class ProductRetrieveUpdateDeleteView(View):
         :return: ответ 204 (No Content) в случае успешного удаления продукта;
                  ответ 404 (Not Found) если продукт не был найден
         """
-        service = ProductService(dao=self.request['dao']['product'])
         try:
-            product = await service.get_by_slug(slug=self.request.match_info['slug'])
+            product = await self.product_service.get_by_slug(
+                slug=self.request.match_info['slug'])
         except ProductNotFoundException:
             return json_response(status=404, data={'error': 'Product not found'})
 
-        await service.delete(product)
+        await self.product_service.delete(product)
         return Response(status=204)
 
 
-class OrderListCreateView(View):
+class OrderListCreateView(ProductServiceViewMixin, OrderServiceViewMixin, View):
     """View создания и получения списка заказов."""
 
     @validate(request_schema=ORDER_PRODUCT_SCHEMA)
@@ -140,33 +134,25 @@ class OrderListCreateView(View):
                  ответ 404 (Not Found), в случае, если запрашиваемый продукт не был найден;
                  ответ 400 (Bad Request), в случае, если клиент пытается заказать товара больше, чем есть на складе
         """
-        data = await self.request.json()
-        product_service = ProductService(dao=self.request['dao']['product'])
-        order_service = OrderService(
-            order_dao=self.request['dao']['order'],
-            product_dao=self.request['dao']['product'],
-            order_product_dao=self.request['dao']['order_product'],
-            user_order_dao=self.request['dao']['user_order']
-        )
-
         products = []
+        data = await self.request.json()
         for item in data:
             try:
-                product = await product_service.get_by_slug(slug=item['product'])
+                product = await self.product_service.get_by_slug(slug=item['product'])
                 products.append((product, item['quantity']))
             except ProductNotFoundException:
                 error_message = 'Product with "{slug}" slug do not exists'.format(slug=item['product'])
                 return json_response(status=404, data={'error': error_message})
 
         try:
-            order, order_products = await order_service.create(
+            order, order_products = await self.order_service.create(
                 user=self.request['user'], products=products)
         except ProductNotEnoughException as e:
             await self.request['trans'].rollback()
             error_message = 'Not enough product with slug "{slug}" in stock.'.format(slug=e.product.slug)
             return json_response(status=400, data={'error': error_message})
 
-        order_dict = deepcopy(order.__dict__)
-        order_dict['products'] = [product.__dict__ for product in order_products]
+        order_dict = dict(order)
+        order_dict['products'] = [dict(product) for product in order_products]
         body = json.dumps(order_dict, cls=JsonEncoder)
         return Response(status=201, text=body, content_type='application/json')

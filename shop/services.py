@@ -1,8 +1,58 @@
 from typing import Iterable, Tuple
 
-from .dao import OrderDAO, OrderProductDAO, ProductDAO, UserOrderDAO
-from .exceptions import ProductNotEnoughException, ProductNotFoundException
+from passlib.hash import sha256_crypt
+
+from .dao import (AccessTokenDAO, OrderDAO, OrderProductDAO, ProductDAO, SqlAlchemyOrderDAO, SqlAlchemyOrderProductDAO,
+                  SqlAlchemyProductDAO, SqlAlchemyTokenDAO, SqlAlchemyUserDAO, SqlAlchemyUserOrderDAO, UserDAO,
+                  UserOrderDAO)
+from .exceptions import ProductNotEnoughException, ProductNotFoundException, UserNotFoundException
 from .storage import Order, OrderProduct, Product, User, UserOrder
+
+
+class AuthService:
+    """Сервис, инкапсулирующий бинес-логику аутентификации."""
+
+    def __init__(self, dao: UserDAO) -> None:
+        """
+        Инициализация экземпляра класса сервиса.
+
+        :param dao: DAO-объект для работы с сущностью Пользователь (User)
+        """
+        self.dao = dao
+
+    async def check_credentials(self, login: str, password: str) -> bool:
+        """
+        Проверить аутентификационные данные пользователя.
+
+        :param login: логин пользователя
+        :param password: пароль пользователя
+        """
+        try:
+            user = await self.dao.get_by_login(login=login)
+        except UserNotFoundException:
+            return False
+        return sha256_crypt.verify(password, user.password)
+
+
+class AccessTokenService:
+    """Сервис, инкапсулирующий бизнес-логику работы с токенами."""
+
+    def __init__(self, dao: AccessTokenDAO) -> None:
+        """
+        Инициализация экземпляра класса сервиса.
+
+        :param dao: DAO-объект для работы с сущностью Токен (AccessToken)
+        """
+        self.dao = dao
+
+    async def get_by_login(self, login: str) -> str:
+        """
+        Вернуть токен пользователя.
+
+        :param login: логин пользователя
+        """
+        access_token = await self.dao.get_by_login(login=login)
+        return access_token.token
 
 
 class ProductService:
@@ -88,6 +138,9 @@ class OrderService:
         Инициализация экземпляра класса сервиса.
 
         :param order_dao: DAO-объект заказа
+        :param product_dao:
+        :param order_product_dao:
+        :param user_order_dao:
         """
         self.order_dao = order_dao
         self.product_dao = product_dao
@@ -125,3 +178,52 @@ class OrderService:
         user_order = UserOrder(user_id=user.id, order_id=order.id)
         await self.user_order_dao.create(user_order)
         return order, order_products
+
+
+class ServiceFactory:
+    """Фабрика создания объектов-сервисов."""
+
+    def __init__(self, conn) -> None:
+        """
+        Инициализация фабрики.
+
+        :param conn: объект подключения к БД
+        """
+        self.conn = conn
+
+    def create_auth_service(self) -> AuthService:
+        """
+        Создать объект-сервис для работы с аутентификацией.
+
+        :return: объект-сервис для работы с аутентификацией
+        """
+        return AuthService(dao=SqlAlchemyUserDAO(self.conn))
+
+    def create_access_token_service(self) -> AccessTokenService:
+        """
+        Создать объект-сервис для работы с токенами.
+
+        :return: объект-сервис для работы с токенами
+        """
+        return AccessTokenService(dao=SqlAlchemyTokenDAO(self.conn))
+
+    def create_product_service(self) -> ProductService:
+        """
+        Создать объект-сервис для работы с продуктами.
+
+        :return: объект-сервис для работы с продуктами
+        """
+        return ProductService(dao=SqlAlchemyProductDAO(self.conn))
+
+    def create_order_service(self) -> OrderService:
+        """
+        Создать объект-сервис для работы с заказами.
+
+        :return: объект-сервис для работы с заказами
+        """
+        return OrderService(
+            order_dao=SqlAlchemyOrderDAO(self.conn),
+            product_dao=SqlAlchemyProductDAO(self.conn),
+            order_product_dao=SqlAlchemyOrderProductDAO(self.conn),
+            user_order_dao=SqlAlchemyUserOrderDAO(self.conn)
+        )
