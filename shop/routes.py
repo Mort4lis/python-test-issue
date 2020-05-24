@@ -12,5 +12,6 @@ def setup_routes(app: web.Application) -> None:
     app.router.add_routes([
         web.post('/login', views.LoginView),
         web.view('/products', views.ProductListCreateView),
-        web.view('/products/{slug}', views.ProductRetrieveUpdateDeleteView)
+        web.view('/products/{slug}', views.ProductRetrieveUpdateDeleteView),
+        web.view('/orders', views.OrderListCreateView)
     ])

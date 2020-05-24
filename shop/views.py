@@ -1,12 +1,13 @@
 import json
+from copy import deepcopy
 
 from aiohttp.web import Response, View, json_response
 from aiohttp_validate import validate
 
 from .auth import check_credentials, get_access_token
-from .exceptions import ProductNotFoundException
-from .schemas import AUTH_SCHEMA, PRODUCT_SCHEMA
-from .services import ProductService
+from .exceptions import ProductNotEnoughException, ProductNotFoundException
+from .schemas import AUTH_SCHEMA, ORDER_PRODUCT_SCHEMA, PRODUCT_SCHEMA
+from .services import OrderService, ProductService
 from .storage import Product
 from .utils import JsonEncoder
 
@@ -125,3 +126,47 @@ class ProductRetrieveUpdateDeleteView(View):
 
         await service.delete(product)
         return Response(status=204)
+
+
+class OrderListCreateView(View):
+    """View создания и получения списка заказов."""
+
+    @validate(request_schema=ORDER_PRODUCT_SCHEMA)
+    async def post(self, *args):
+        """
+        Endpoint создания заказа.
+
+        :return: ответ 201 (Created), в случае успешного создания заказа;
+                 ответ 404 (Not Found), в случае, если запрашиваемый продукт не был найден;
+                 ответ 400 (Bad Request), в случае, если клиент пытается заказать товара больше, чем есть на складе
+        """
+        data = await self.request.json()
+        product_service = ProductService(dao=self.request['dao']['product'])
+        order_service = OrderService(
+            order_dao=self.request['dao']['order'],
+            product_dao=self.request['dao']['product'],
+            order_product_dao=self.request['dao']['order_product'],
+            user_order_dao=self.request['dao']['user_order']
+        )
+
+        products = []
+        for item in data:
+            try:
+                product = await product_service.get_by_slug(slug=item['product'])
+                products.append((product, item['quantity']))
+            except ProductNotFoundException:
+                error_message = 'Product with "{slug}" slug do not exists'.format(slug=item['product'])
+                return json_response(status=404, data={'error': error_message})
+
+        try:
+            order, order_products = await order_service.create(
+                user=self.request['user'], products=products)
+        except ProductNotEnoughException as e:
+            await self.request['trans'].rollback()
+            error_message = 'Not enough product with slug "{slug}" in stock.'.format(slug=e.product.slug)
+            return json_response(status=400, data={'error': error_message})
+
+        order_dict = deepcopy(order.__dict__)
+        order_dict['products'] = [product.__dict__ for product in order_products]
+        body = json.dumps(order_dict, cls=JsonEncoder)
+        return Response(status=201, text=body, content_type='application/json')

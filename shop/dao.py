@@ -6,9 +6,9 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from overrides import overrides
 
-from .db import product_table, token_table, user_table
+from .db import order_product_table, order_table, product_table, token_table, user_order_table, user_table
 from .exceptions import ProductNotFoundException, TokenNotFoundException, UserNotFoundException
-from .storage import AccessToken, Product, User
+from .storage import AccessToken, Order, OrderProduct, Product, User, UserOrder
 
 
 class UserDAO(ABC):
@@ -277,3 +277,77 @@ class SqlAlchemyProductDAO(BaseSqlAlchemyDAO, ProductDAO):
         query = product_table.delete().where(product_table.c.id == product.id)
         await self.conn.execute(query)
         return product
+
+
+class OrderDAO(ABC):
+    """Абстрактный слой доступа к БД (DAO) для сущности Заказ (Order)."""
+
+    @abstractmethod
+    async def create(self) -> Order:
+        """
+        Создать заказ.
+
+        :return: созданный экземпляр заказа
+        """
+        pass
+
+
+class SqlAlchemyOrderDAO(BaseSqlAlchemyDAO, OrderDAO):
+    """Реализация абстрактного слоя доступа к БД (DAO) для сущности Заказ (Order)."""
+
+    @overrides
+    async def create(self) -> Order:
+        query = order_table.insert(). \
+            values(). \
+            returning(order_table.c.id, order_table.c.number)
+        result = await self.conn.execute(query)
+        fields = await result.fetchone()
+        return Order(id=fields.id, number=fields.number)
+
+
+class OrderProductDAO(ABC):
+    """Абстрактный слой доступа к БД (DAO) для связи Продуктов и Заказов (OrderProduct)."""
+
+    @abstractmethod
+    async def create(self, order_product: OrderProduct) -> OrderProduct:
+        """
+        Создать связь продукта и заказа.
+
+        :param order_product: экземпляр связи, которую необходимо создать
+        :return: созданный экземпляр связи
+        """
+        pass
+
+
+class SqlAlchemyOrderProductDAO(BaseSqlAlchemyDAO, OrderProductDAO):
+    """Реализация абстрактного слоя доступа к БД (DAO) для связи Продуктов и Заказов (OrderProduct)."""
+
+    @overrides
+    async def create(self, order_product: OrderProduct) -> OrderProduct:
+        query = order_product_table.insert().values(**dict(order_product))
+        await self.conn.execute(query)
+        return order_product
+
+
+class UserOrderDAO(ABC):
+    """Абстрактный слой доступа к БД (DAO) для связи Пользователей и Заказов (UserOrder)."""
+
+    @abstractmethod
+    async def create(self, user_order: UserOrder) -> UserOrder:
+        """
+        Создать связь пользователя и продукта.
+
+        :param user_order: экземпляр связи, которую необходимо создать
+        :return: созданный экземпляр связи
+        """
+        pass
+
+
+class SqlAlchemyUserOrderDAO(BaseSqlAlchemyDAO, UserOrderDAO):
+    """Реализация абстрактного слоя доступа к БД (DAO) для связи Пользователей и Заказов (UserOrder)."""
+
+    @overrides
+    async def create(self, user_order: UserOrder) -> UserOrder:
+        query = user_order_table.insert().values(**dict(user_order))
+        await self.conn.execute(query)
+        return user_order

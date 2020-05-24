@@ -19,3 +19,17 @@ PRODUCT_SCHEMA = {
     'required': ['name', 'description', 'price', 'left_in_stock'],
     'additionalProperties': False
 }
+
+ORDER_PRODUCT_SCHEMA = {
+    'type': 'array',
+    'items': {
+        'type': 'object',
+        'properties': {
+            'product': {'type': 'string'},
+            'quantity': {'type': 'integer', 'minimum': 1}
+        },
+        'required': ['product', 'quantity'],
+        'additionalProperties': False
+    },
+    'minItems': 1
+}

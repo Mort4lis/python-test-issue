@@ -1,8 +1,8 @@
-from typing import Iterable
+from typing import Iterable, Tuple
 
-from .dao import ProductDAO
-from .exceptions import ProductNotFoundException
-from .storage import Product
+from .dao import OrderDAO, OrderProductDAO, ProductDAO, UserOrderDAO
+from .exceptions import ProductNotEnoughException, ProductNotFoundException
+from .storage import Order, OrderProduct, Product, User, UserOrder
 
 
 class ProductService:
@@ -74,3 +74,54 @@ class ProductService:
         :return: удаленный экземпляр продукта
         """
         return await self.dao.delete(product=product)
+
+
+class OrderService:
+    """Сервис, инкапсулирующий бизнес-логику заказов."""
+
+    def __init__(self,
+                 order_dao: OrderDAO,
+                 product_dao: ProductDAO,
+                 order_product_dao: OrderProductDAO,
+                 user_order_dao: UserOrderDAO) -> None:
+        """
+        Инициализация экземпляра класса сервиса.
+
+        :param order_dao: DAO-объект заказа
+        """
+        self.order_dao = order_dao
+        self.product_dao = product_dao
+        self.order_product_dao = order_product_dao
+        self.user_order_dao = user_order_dao
+
+    async def create(self,
+                     user: User,
+                     products: Iterable[Tuple[Product, int]]) -> Tuple[Order, Iterable[OrderProduct]]:
+        """
+        Создать заказ.
+
+        :param user: экземпляр пользователя, которому необходимо привязать созданный заказ
+        :param products: коллекция кортежей вида (продукт, количество)
+        :return: кортеж вида (заказ, список продуктов для заказа)
+
+        :raise ProductNotEnoughException: выбрасывается в случае, если количество товара на складе недостаточно
+        """
+        order = await self.order_dao.create()
+
+        order_products = []
+        for product, quantity in products:
+            if not product.is_enough_in_stock(quantity):
+                raise ProductNotEnoughException(product=product)
+
+            product.left_in_stock -= quantity
+            order_product = OrderProduct(
+                order_id=order.id,
+                product_id=product.id,
+                quantity=quantity)
+            await self.product_dao.update(product)
+            await self.order_product_dao.create(order_product)
+            order_products.append(order_product)
+
+        user_order = UserOrder(user_id=user.id, order_id=order.id)
+        await self.user_order_dao.create(user_order)
+        return order, order_products

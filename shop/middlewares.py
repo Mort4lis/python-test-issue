@@ -2,7 +2,8 @@ from typing import Callable
 
 from aiohttp import web
 
-from shop.dao import SqlAlchemyProductDAO, SqlAlchemyTokenDAO, SqlAlchemyUserDAO
+from shop.dao import (SqlAlchemyOrderDAO, SqlAlchemyOrderProductDAO, SqlAlchemyProductDAO,
+                      SqlAlchemyTokenDAO, SqlAlchemyUserDAO, SqlAlchemyUserOrderDAO)
 
 
 @web.middleware
@@ -10,22 +11,24 @@ async def transaction_middleware(request: web.Request, handler: Callable) -> web
     """
     Middleware (посредник), открывающий соединение с БД и создающий транзакцию.
 
-    Проставляет в экземпляр запроса экземпляр соединения с БД.
+    Проставляет в экземпляр запроса экземпляр соединения с БД и экземпляр текущей транзакции.
 
     :param request: экземпляр запроса
     :param handler: обработчик запроса (controller)
     :return: экземпляр ответа
     """
     async with request.app['db'].acquire() as conn:
-        request['conn'] = conn
         trans = await conn.begin()
+        request['conn'] = conn
+        request['trans'] = trans
         try:
             response = await handler(request)
         except Exception as e:
             await trans.rollback()
             raise e
 
-        await trans.commit()
+        if trans.is_active:
+            await trans.commit()
         return response
 
 
@@ -44,7 +47,10 @@ async def dao_middleware(request: web.Request, handler: Callable) -> web.Respons
     dao_instances = {
         'user': SqlAlchemyUserDAO(conn),
         'token': SqlAlchemyTokenDAO(conn),
-        'product': SqlAlchemyProductDAO(conn)
+        'product': SqlAlchemyProductDAO(conn),
+        'order': SqlAlchemyOrderDAO(conn),
+        'order_product': SqlAlchemyOrderProductDAO(conn),
+        'user_order': SqlAlchemyUserOrderDAO(conn)
     }
     request['dao'] = dao_instances
     return await handler(request)

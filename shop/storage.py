@@ -3,7 +3,24 @@ from typing import Generator, Optional
 from uuid import UUID
 
 
-class User:
+class Entity:
+    """Базовый класс сущностей, используемых в проекте."""
+
+    def __iter__(self) -> Generator:
+        """
+        Реализация интерфейса итератора в виде генератора.
+
+        Данная реализация необходима для того, чтобы получить представление объекта
+        в виде словаря (dict), при этом не включая в данное представление атрибуты объекта,
+        значения которых равны None.
+        """
+        for key, value in self.__dict__.items():
+            if value is None:
+                continue
+            yield key, value
+
+
+class User(Entity):
     """Класс пользователей."""
 
     def __init__(self,
@@ -42,7 +59,7 @@ class User:
         return ' '.join([self.surname, self.first_name, self.middle_name])
 
 
-class AccessToken:
+class AccessToken(Entity):
     """Класс токенов доступа."""
 
     def __init__(self, id: UUID, token: str, user_id: UUID) -> None:
@@ -58,7 +75,7 @@ class AccessToken:
         self.user_id = user_id
 
 
-class Product:
+class Product(Entity):
     """Класс продуктов."""
 
     def __init__(self,
@@ -89,9 +106,55 @@ class Product:
         if not slug:
             self.slug = '-'.join(name.split(' ')).lower()
 
-    def __iter__(self) -> Generator:
-        """Реализация интерфейса итератора в виде генератора."""
-        for key, value in self.__dict__.items():
-            if key == 'id' and value is None:
-                continue
-            yield key, value
+    def is_enough_in_stock(self, quantity: int) -> bool:
+        """
+        Проверить на достаточное наличие товара.
+
+        :param quantity: количество товара
+        :return: логический результат проверки
+        """
+        return self.left_in_stock >= quantity
+
+
+class Order(Entity):
+    """Класс заказов."""
+
+    def __init__(self, id: UUID, number: int) -> None:
+        """
+        Конструктор инициализации заказа.
+
+        :param id: идентификатор заказа
+        :param number: номер заказа
+        """
+        self.id = id
+        self.number = number
+
+
+class OrderProduct(Entity):
+    """Класс связности заказов и продуктов."""
+
+    def __init__(self, order_id: UUID, product_id: UUID, quantity: int) -> None:
+        """
+        Конструктор иницилизации объекта.
+
+        :param order_id: идентификатор заказа
+        :param product_id: идентификатор продукта
+        :param quantity: количество продукта
+        """
+        self.order_id = order_id
+        self.product_id = product_id
+        self.quantity = quantity
+
+
+class UserOrder(Entity):
+    """Класс связности пользователей и продуктов."""
+
+    def __init__(self, user_id: UUID, order_id: UUID) -> None:
+        """
+        Конструктор иницилизации объекта.
+
+        :param user_id: идентификатор пользователя
+        :param order_id: идентификатор заказа
+        """
+        self.user_id = user_id
+        self.order_id = order_id

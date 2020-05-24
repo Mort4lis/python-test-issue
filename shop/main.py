@@ -18,7 +18,6 @@ async def init() -> web.Application:
 
     :return: экземпляр aiohttp-приложения
     """
-
     async def user_loader(token: str) -> Optional[User]:
         """
         Проверить валидность переданного токена.

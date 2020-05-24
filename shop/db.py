@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from aiopg.sa import create_engine
-from sqlalchemy import (Column, Enum, ForeignKey, Integer, MetaData, Numeric, String, Table, Text)
+from sqlalchemy import (Column, Enum, ForeignKey, Integer, MetaData, Numeric, Sequence, String, Table, Text)
 from sqlalchemy.dialects.postgresql import UUID
 
 meta = MetaData()
@@ -47,7 +47,8 @@ order_table = Table(
     'orders', meta,
 
     Column('id', UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False),
-    Column('number', Integer, nullable=False)
+    Column('number', Integer, Sequence(
+        'order_number_seq', start=1000, increment=10), unique=True, nullable=False)
 )
 
 order_product_table = Table(
