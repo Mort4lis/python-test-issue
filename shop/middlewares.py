@@ -1,10 +1,12 @@
-from aiohttp.web import middleware
+from typing import Callable
+
+from aiohttp import web
 
 from shop.dao import SqlAlchemyProductDAO, SqlAlchemyTokenDAO, SqlAlchemyUserDAO
 
 
-@middleware
-async def transaction_middleware(request, handler):
+@web.middleware
+async def transaction_middleware(request: web.Request, handler: Callable) -> web.Response:
     """
     Middleware (посредник), открывающий соединение с БД и создающий транзакцию.
 
@@ -12,7 +14,7 @@ async def transaction_middleware(request, handler):
 
     :param request: экземпляр запроса
     :param handler: обработчик запроса (controller)
-    :return: http-ответ
+    :return: экземпляр ответа
     """
     async with request.app['db'].acquire() as conn:
         request['conn'] = conn
@@ -27,14 +29,16 @@ async def transaction_middleware(request, handler):
         return response
 
 
-@middleware
-async def dao_middleware(request, handler):
+@web.middleware
+async def dao_middleware(request: web.Request, handler: Callable) -> web.Response:
     """
     Middleware (посредник), создающий DAO-экземпляры.
 
+    Создает DAO-экземпляры и проставляет их в объект запроса.
+
     :param request: экземпляр запроса
     :param handler: обработчик запроса (controller)
-    :return: http-ответ
+    :return: экземпляр ответа
     """
     conn = request['conn']
     dao_instances = {
@@ -42,5 +46,5 @@ async def dao_middleware(request, handler):
         'token': SqlAlchemyTokenDAO(conn),
         'product': SqlAlchemyProductDAO(conn)
     }
-    request.app['dao'] = dao_instances
+    request['dao'] = dao_instances
     return await handler(request)

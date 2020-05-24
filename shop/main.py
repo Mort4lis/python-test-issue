@@ -3,6 +3,7 @@ from typing import Optional
 from aiohttp import web
 from aiohttp_tokenauth import token_auth_middleware
 
+from shop.dao import SqlAlchemyUserDAO
 from shop.db import close_pg, init_pg
 from shop.exceptions import DAOException
 from shop.middlewares import dao_middleware, transaction_middleware
@@ -26,12 +27,13 @@ async def init() -> web.Application:
         :return: если токен найден в БД - вернет экземпляр класса `User`,
                  в противном случае - None
         """
-        user_dao = app['dao']['user']
-        try:
-            user = await user_dao.get_by_token(token)
-        except DAOException:
-            user = None
-        return user
+        async with app['db'].acquire() as conn:
+            user_dao = SqlAlchemyUserDAO(conn)
+            try:
+                user = await user_dao.get_by_token(token)
+            except DAOException:
+                user = None
+            return user
 
     app = web.Application(middlewares=[
         transaction_middleware,

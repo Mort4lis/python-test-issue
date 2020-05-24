@@ -22,7 +22,7 @@ class LoginView(View):
         :return: ответ 200 (OK), содержащий тело токена в случае успешной аутентификации;
                  ответ 400 (Bad Request), если были переданы некорректные аутентификационные данные
         """
-        dao_instances = self.request.app['dao']
+        dao_instances = self.request['dao']
         credentials = await self.request.json()
         if await check_credentials(user_dao=dao_instances['user'], **credentials):
             token = await get_access_token(token_dao=dao_instances['token'], login=credentials['login'])
@@ -40,7 +40,7 @@ class ProductListCreateView(View):
 
         :return: ответ 200 (OK), содержащий коллекцию json-представлений продуктов
         """
-        dao = self.request.app['dao']['product']
+        dao = self.request['dao']['product']
         service = ProductService(dao=dao)
         products = await service.get_all()
         body = json.dumps([product.__dict__ for product in products], cls=JsonEncoder)
@@ -55,7 +55,7 @@ class ProductListCreateView(View):
                  ответ 400 (Bad Request), если данный продукт уже существует или были переданы некорректные данные
         """
         data = await self.request.json()
-        service = ProductService(dao=self.request.app['dao']['product'])
+        service = ProductService(dao=self.request['dao']['product'])
 
         product = Product(**data)
         if await service.exists_by_slug(slug=product.slug):
@@ -77,7 +77,7 @@ class ProductRetrieveUpdateDeleteView(View):
         :return: ответ 200 (OK), содержащий json-представление продукта;
                  ответ 404 (Not Found), если продукт не был найден
         """
-        service = ProductService(dao=self.request.app['dao']['product'])
+        service = ProductService(dao=self.request['dao']['product'])
         try:
             product = await service.get_by_slug(slug=self.request.match_info['slug'])
         except ProductNotFoundException:
@@ -97,7 +97,7 @@ class ProductRetrieveUpdateDeleteView(View):
                  ответ 404 (Not Found), если продукт не был найден
         """
         data = await self.request.json()
-        service = ProductService(dao=self.request.app['dao']['product'])
+        service = ProductService(dao=self.request['dao']['product'])
         try:
             product = await service.get_by_slug(slug=self.request.match_info['slug'])
         except ProductNotFoundException:
@@ -117,7 +117,7 @@ class ProductRetrieveUpdateDeleteView(View):
         :return: ответ 204 (No Content) в случае успешного удаления продукта;
                  ответ 404 (Not Found) если продукт не был найден
         """
-        service = ProductService(dao=self.request.app['dao']['product'])
+        service = ProductService(dao=self.request['dao']['product'])
         try:
             product = await service.get_by_slug(slug=self.request.match_info['slug'])
         except ProductNotFoundException:
