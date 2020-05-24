@@ -5,7 +5,7 @@ from aiohttp_tokenauth import token_auth_middleware
 
 from shop.db import close_pg, init_pg
 from shop.exceptions import DAOException
-from shop.middlewares import dao_middleware
+from shop.middlewares import dao_middleware, transaction_middleware
 from shop.routes import setup_routes
 from shop.settings import config
 from shop.storage import User
@@ -17,6 +17,7 @@ async def init() -> web.Application:
 
     :return: экземпляр aiohttp-приложения
     """
+
     async def user_loader(token: str) -> Optional[User]:
         """
         Проверить валидность переданного токена.
@@ -33,6 +34,7 @@ async def init() -> web.Application:
         return user
 
     app = web.Application(middlewares=[
+        transaction_middleware,
         dao_middleware,
         token_auth_middleware(
             user_loader=user_loader,
