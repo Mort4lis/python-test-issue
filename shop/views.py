@@ -147,7 +147,7 @@ class OrderListCreateView(ProductServiceViewMixin, OrderServiceViewMixin, View):
     """View создания и получения списка заказов."""
 
     @validate(request_schema=ORDER_PRODUCT_SCHEMA)
-    async def post(self, *args):
+    async def post(self, *args) -> Response:
         """
         Endpoint создания заказа.
 
@@ -195,7 +195,7 @@ class OrderListCreateView(ProductServiceViewMixin, OrderServiceViewMixin, View):
 class OrderRetrieveUpdateDeleteView(OrderServiceViewMixin, View):
     """View получения/обновления/удаления конкретного заказа."""
 
-    async def get(self):
+    async def get(self) -> Response:
         """
         Endpoint получения конкретного заказа.
 
