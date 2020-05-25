@@ -19,6 +19,12 @@ class LoginView(AuthServiceViewMixin, AccessTokenServiceViewMixin, View):
         """
         Аутентификация пользователя.
 
+        Пример тела запроса:
+        {
+            "login": "user_login",
+            "password": "user_password"
+        }
+
         :return: ответ 200 (OK), содержащий тело токена в случае успешной аутентификации;
                  ответ 400 (Bad Request), если были переданы некорректные аутентификационные данные
         """
@@ -47,6 +53,14 @@ class ProductListCreateView(ProductServiceViewMixin, View):
     async def post(self, *args) -> Response:
         """
         Endpoint создания продуктов.
+
+        Пример тела запроса:
+        {
+            "name": "product_name",
+            "description": "product_description",
+            "price": 105.2,
+            "left_in_stock": 7
+        }
 
         :return: ответ 201 (Created), содержащий json-представление продукта в случае успеха;
                  ответ 400 (Bad Request), если данный продукт уже существует или были переданы некорректные данные
@@ -87,6 +101,13 @@ class ProductRetrieveUpdateDeleteView(ProductServiceViewMixin, View):
         Endpoint, возвращающий обновленное представление продукта по slug.
 
         Принимает тело запроса и обновляет выбранный продукт.
+        Пример тела запроса:
+        {
+            "name": "product_name",
+            "description": "product_description",
+            "price": 105.2,
+            "left_in_stock": 7
+        }
 
         :return: ответ 200 (OK), содержащий json-представление обновленного продукта;
                  ответ 404 (Not Found), если продукт не был найден
@@ -129,6 +150,19 @@ class OrderListCreateView(ProductServiceViewMixin, OrderServiceViewMixin, View):
     async def post(self, *args):
         """
         Endpoint создания заказа.
+
+        Пример тела запроса:
+        [
+            {
+                "product": "product_slug",
+                "quantity": 3
+            },
+            {
+                "product": "product_slug",
+                "quantity": 10
+            },
+            ...
+        ]
 
         :return: ответ 201 (Created), в случае успешного создания заказа;
                  ответ 404 (Not Found), в случае, если запрашиваемый продукт не был найден;
