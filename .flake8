@@ -4,7 +4,20 @@ ignore=
      D106,
      # D100: Missing docstring in public module
      D100
-application-import-names=shop
+application-import-names=
+    dao,
+    db,
+    exceptions,
+    main,
+    middlewares,
+    mixins,
+    routes,
+    schemas,
+    services,
+    settings,
+    storage,
+    utils,
+    views
 max-line-length=119
 exclude=__init__.py, init_db.py, venv/
 max-complexity=10
