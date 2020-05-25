@@ -1,0 +1,27 @@
+version: '3.7'
+services:
+  db:
+    image: postgres:12.1
+    container_name: db
+    ports:
+      - 5433:5432
+    volumes:
+      - ./pg_data/:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: shop_test
+      POSTGRES_USER: shop_user
+      POSTGRES_PASSWORD: shop_password
+    restart: always
+  web:
+    build: .
+    container_name: web
+    volumes:
+      - ./:/app/
+    ports:
+      - 8080:8080
+    restart: always
+    depends_on:
+      - db
+volumes:
+  pg_data:
+  .:
