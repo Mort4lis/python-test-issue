@@ -1,6 +1,6 @@
 from aiohttp import web
 
-from shop import views
+import views
 
 
 def setup_routes(app: web.Application) -> None:

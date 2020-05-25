@@ -3,12 +3,12 @@ import json
 from aiohttp.web import Response, View, json_response
 from aiohttp_validate import validate
 
-from .exceptions import OrderNotFoundException, ProductNotEnoughException, ProductNotFoundException
-from .mixins import (AccessTokenServiceViewMixin, AuthServiceViewMixin,
-                     OrderServiceViewMixin, ProductServiceViewMixin)
-from .schemas import AUTH_SCHEMA, ORDER_PRODUCT_SCHEMA, PRODUCT_SCHEMA
-from .storage import Product
-from .utils import JsonEncoder
+from exceptions import OrderNotFoundException, ProductNotEnoughException, ProductNotFoundException
+from mixins import (AccessTokenServiceViewMixin, AuthServiceViewMixin,
+                    OrderServiceViewMixin, ProductServiceViewMixin)
+from schemas import AUTH_SCHEMA, ORDER_PRODUCT_SCHEMA, PRODUCT_SCHEMA
+from storage import Product
+from utils import JsonEncoder
 
 
 class LoginView(AuthServiceViewMixin, AccessTokenServiceViewMixin, View):

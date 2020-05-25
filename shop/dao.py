@@ -6,10 +6,10 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from overrides import overrides
 
-from .db import order_product_table, order_table, product_table, token_table, user_order_table, user_table
-from .exceptions import (OrderNotFoundException, ProductNotFoundException, TokenNotFoundException,
-                         UserNotFoundException)
-from .storage import AccessToken, Order, OrderProduct, Product, User, UserOrder
+from db import order_product_table, order_table, product_table, token_table, user_order_table, user_table
+from exceptions import (OrderNotFoundException, ProductNotFoundException, TokenNotFoundException,
+                        UserNotFoundException)
+from storage import AccessToken, Order, OrderProduct, Product, User, UserOrder
 
 
 class UserDAO(ABC):

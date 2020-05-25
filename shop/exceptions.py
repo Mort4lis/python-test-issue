@@ -1,4 +1,4 @@
-from .storage import Product
+from storage import Product
 
 
 class BaseShopException(Exception):

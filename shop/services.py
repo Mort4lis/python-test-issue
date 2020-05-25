@@ -2,12 +2,12 @@ from typing import Iterable, Tuple
 
 from passlib.hash import sha256_crypt
 
-from .dao import (AccessTokenDAO, OrderDAO, OrderProductDAO, ProductDAO, SqlAlchemyOrderDAO, SqlAlchemyOrderProductDAO,
-                  SqlAlchemyProductDAO, SqlAlchemyTokenDAO, SqlAlchemyUserDAO, SqlAlchemyUserOrderDAO, UserDAO,
-                  UserOrderDAO)
-from .exceptions import (OrderNotFoundException, ProductNotEnoughException, ProductNotFoundException,
-                         UserNotFoundException)
-from .storage import Order, OrderProduct, Product, User, UserOrder
+from dao import (AccessTokenDAO, OrderDAO, OrderProductDAO, ProductDAO, SqlAlchemyOrderDAO, SqlAlchemyOrderProductDAO,
+                 SqlAlchemyProductDAO, SqlAlchemyTokenDAO, SqlAlchemyUserDAO, SqlAlchemyUserOrderDAO, UserDAO,
+                 UserOrderDAO)
+from exceptions import (OrderNotFoundException, ProductNotEnoughException, ProductNotFoundException,
+                        UserNotFoundException)
+from storage import Order, OrderProduct, Product, User, UserOrder
 
 
 class AuthService:

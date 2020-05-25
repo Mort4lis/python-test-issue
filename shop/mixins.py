@@ -1,6 +1,6 @@
 from aiohttp.web import View
 
-from .services import ServiceFactory
+from services import ServiceFactory
 
 
 class ServiceViewMixin(View):

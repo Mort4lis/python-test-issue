@@ -3,13 +3,13 @@ from typing import Optional
 from aiohttp import web
 from aiohttp_tokenauth import token_auth_middleware
 
-from shop.dao import SqlAlchemyUserDAO
-from shop.db import close_pg, init_pg
-from shop.exceptions import DAOException
-from shop.middlewares import transaction_middleware
-from shop.routes import setup_routes
-from shop.settings import config
-from shop.storage import User
+from dao import SqlAlchemyUserDAO
+from db import close_pg, init_pg
+from exceptions import DAOException
+from middlewares import transaction_middleware
+from routes import setup_routes
+from settings import config
+from storage import User
 
 
 async def init() -> web.Application:
@@ -18,6 +18,7 @@ async def init() -> web.Application:
 
     :return: экземпляр aiohttp-приложения
     """
+
     async def user_loader(token: str) -> Optional[User]:
         """
         Проверить валидность переданного токена.
