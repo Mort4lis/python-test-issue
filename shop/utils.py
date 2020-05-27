@@ -12,7 +12,7 @@ class UUIDEncoderMixin(json.JSONEncoder):
         Сериализация объекта класса `UUID`.
 
         :param obj: сериализуемый объект
-        :return: сереализуемое представление объекта
+        :return: сериализованное представление объекта
         """
         if isinstance(obj, UUID):
             return obj.hex
@@ -27,7 +27,7 @@ class DecimalEncoderMixin(json.JSONEncoder):
         Сериализация объекта класса `Decimal`.
 
         :param obj: сериализуемый объект
-        :return: сереализуемое представление объекта
+        :return: сериализованное представление объекта
         """
         if isinstance(obj, Decimal):
             return float(obj)

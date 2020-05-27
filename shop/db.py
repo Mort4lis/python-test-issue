@@ -71,14 +71,14 @@ product_table = Table(
 )
 
 
-async def init_pg(app):
+async def init_pg(app) -> None:
     """Инициализация объекта engine БД."""
     config = app['config']['postgres']
     engine = await create_engine(**config)
     app['db'] = engine
 
 
-async def close_pg(app):
+async def close_pg(app) -> None:
     """Завершение всех соединенией с БД."""
     app['db'].close()
     await app['db'].wait_closed()

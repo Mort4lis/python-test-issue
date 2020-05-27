@@ -22,6 +22,7 @@ class UserDAO(ABC):
 
         :param login: логин пользователя
         :return: найденный экземпляр класса `User`
+        :raise UserNotFoundException: выбрасывается, если пользователь не был найден
         """
         pass
 
@@ -32,6 +33,7 @@ class UserDAO(ABC):
 
         :param token: токен доступа
         :return: найденный экземпляр класса `User`
+        :raise UserNotFoundException: выбрасывается, если пользователь не был найден
         """
         pass
 
@@ -46,6 +48,7 @@ class AccessTokenDAO(ABC):
 
         :param login: логин пользователя
         :return: найденный экземпляр класса `AccessToken`
+        :raise TokenNotFoundException: выбрасывается, если токен не был найден
         """
         pass
 
@@ -58,8 +61,8 @@ class ProductDAO(ABC):
         """
         Получить продукт по slug.
 
-        :raise ProductNotFoundException: исключение в случае неудачного поиска
         :return: найденный экземпляр продукта
+        :raise ProductNotFoundException: исключение в случае неудачного поиска
         """
         pass
 
@@ -117,6 +120,7 @@ class OrderDAO(ABC):
 
         :param number: номер заказа
         :return: найденный экземпляр заказа
+        :raise OrderNotFoundException: выбрасывается, если заказ не был найден
         """
         pass
 

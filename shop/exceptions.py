@@ -2,7 +2,7 @@ from storage import Product
 
 
 class BaseShopException(Exception):
-    """Базовый класс приложения."""
+    """Базовый класс исключений всего приложения."""
 
     pass
 

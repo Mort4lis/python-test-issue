@@ -62,7 +62,7 @@ class ProductListCreateView(ProductServiceViewMixin, View):
             "left_in_stock": 7
         }
 
-        :return: ответ 201 (Created), содержащий json-представление продукта в случае успеха;
+        :return: ответ 201 (Created), содержащий json-представление созданного продукта в случае успеха;
                  ответ 400 (Bad Request), если данный продукт уже существует или были переданы некорректные данные
         """
         data = await self.request.json()

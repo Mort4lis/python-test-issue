@@ -11,7 +11,7 @@ from storage import Order, OrderProduct, Product, User, UserOrder
 
 
 class AuthService:
-    """Сервис, инкапсулирующий бинес-логику аутентификации."""
+    """Сервис, инкапсулирующий логику аутентификации."""
 
     def __init__(self, dao: UserDAO) -> None:
         """
@@ -27,6 +27,7 @@ class AuthService:
 
         :param login: логин пользователя
         :param password: пароль пользователя
+        :return: булево значение в зависимости от результата проверки
         """
         try:
             user = await self.dao.get_by_login(login=login)
@@ -36,7 +37,7 @@ class AuthService:
 
 
 class AccessTokenService:
-    """Сервис, инкапсулирующий бизнес-логику работы с токенами."""
+    """Сервис, инкапсулирующий логику работы с токенами."""
 
     def __init__(self, dao: AccessTokenDAO) -> None:
         """
@@ -51,6 +52,8 @@ class AccessTokenService:
         Вернуть токен пользователя.
 
         :param login: логин пользователя
+        :return: токен пользователя
+        :raise TokenNotFoundException: выбрасывается, если токен не был найден
         """
         access_token = await self.dao.get_by_login(login=login)
         return access_token.token
@@ -72,8 +75,8 @@ class ProductService:
         Поиск продукта по короткому имени slug.
 
         :param slug: короткое наименование продукта
-        :raise ProductNotFoundException: исключение в случае неудачного поиска
         :return: найденый экземпляр продукта
+        :raise ProductNotFoundException: выбрасывается, если продукт не был найден
         """
         return await self.dao.get_by_slug(slug)
 
@@ -101,7 +104,7 @@ class ProductService:
 
     async def create(self, product: Product) -> Product:
         """
-        Создать продукта.
+        Создать продукт.
 
         :param product: экземпляр продукта, который необходимо создать
         :return: созданный экземпляр продукта
@@ -155,7 +158,6 @@ class OrderService:
         :param user:
         :param number: номер заказа
         :return: кортеж вида (заказ, список продуктов для заказа)
-
         :raise OrderNotFoundException: выбрасывается в случае, если заказ не был найден,
             либо он принадлежит другому пользователю
         """
@@ -175,7 +177,6 @@ class OrderService:
         :param user: экземпляр пользователя, которому необходимо привязать созданный заказ
         :param products: коллекция кортежей вида (продукт, количество)
         :return: кортеж вида (заказ, список продуктов для заказа)
-
         :raise ProductNotEnoughException: выбрасывается в случае, если количество товара на складе недостаточно
         """
         order = await self.order_dao.create()
