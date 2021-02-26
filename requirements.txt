@@ -1,4 +1,4 @@
-aiohttp==3.6.2
+aiohttp==3.7.4
 aiohttp-tokenauth==0.0.2
 aiohttp-validate==1.1.0
 aiopg==1.0.0
